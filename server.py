@@ -25,9 +25,9 @@ if __name__ == "__main__":
         'certfile': str(CERT_FILE),
         'keyfile': str(KEY_FILE),
         # Production settings
-        'accesslog': '-',  # Log to stdout
-        'errorlog': '-',   # Log to stdout
-        'worker_connections': 1000,
+        'accesslog': '-',
+        'errorlog': '-', 
+        'worker_connections': 4,
         'timeout': 30,
         'keepalive': 2,
         'backlog': 2048,
