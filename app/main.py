@@ -67,7 +67,7 @@ def create_app() -> FastAPI:
     def deletePost(post_id: int):
         post = findPost(post_id)
         if not post:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"post wiht id: {post_id} doesn't exist")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"post with id: {post_id} doesn't exist")
         posts.remove(post)
         return Response(status_code=status.HTTP_204_NO_CONTENT)
 
@@ -79,7 +79,7 @@ def create_app() -> FastAPI:
             old_post = findPost(post_id)
             posts[posts.index(old_post)] = new_post
         except Exception as exc:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"post wiht id: {post_id} doesn't exist") from exc
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"post with id: {post_id} doesn't exist") from exc
         return {
             "data": post
         }
