@@ -1,6 +1,8 @@
 import gunicorn.app.base
 from app.main import app
-from app.config import CERT_FILE, KEY_FILE, HOST, PORT, WORKERS
+from app.config import Settings
+
+settings = Settings()
 
 class StandaloneApplication(gunicorn.app.base.BaseApplication):
     def __init__(self, app, options=None):
@@ -19,11 +21,11 @@ class StandaloneApplication(gunicorn.app.base.BaseApplication):
 
 if __name__ == "__main__":
     options = {
-        'bind': f'{HOST}:{PORT}',
-        'workers': WORKERS,
+        'bind': f'{settings.HOST}:{settings.PORT}',
+        'workers': settings.WORKERS,
         'worker_class': 'uvicorn.workers.UvicornWorker',
-        'certfile': str(CERT_FILE),
-        'keyfile': str(KEY_FILE),
+        'certfile': str(settings.SSL_CERT_FILE),
+        'keyfile': str(settings.SSL_KEY_FILE),
         # Production settings
         'accesslog': '-',
         'errorlog': '-', 

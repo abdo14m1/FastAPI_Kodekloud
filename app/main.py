@@ -1,89 +1,60 @@
-from random import randrange
-from typing import Optional
 from fastapi import FastAPI, Response, status, HTTPException
-from pydantic import BaseModel
+from .database import Database
+from .models import Post
+from .config import get_settings
 
-class Post(BaseModel):
-    title: str
-    content: str
-    published: bool = True
-    rating: Optional[int] = None
+settings = get_settings()
+app = FastAPI(
+    title=settings.APP_NAME,
+    version=settings.APP_VERSION,
+    debug=settings.DEBUG
+)
 
-posts = [
-    {
-        "title": "title1", 
-        "content": "content1", 
-        "id": 1,
-        "published": True,
-        "rating": None
-    },
-    {
-        "title": "title2", 
-        "content": "content2", 
-        "id": 2, 
-        "published": False,
-        "rating": None
+db = Database()
+cur = db.get_cursor()
+
+@app.get("/")
+
+def hello():
+    return {
+        "message": "Hello World!"
     }
-]
 
-def findPost(post_id: int):
-    try:
-        return [ post for post in posts if post['id'] == post_id ][0] 
-    except Exception as exc:
-        return None
+@app.post("/posts", status_code=status.HTTP_201_CREATED)
+def createPost(post: Post):
+    return {
+        "data": db.create_post(post.model_dump()) 
+    }
 
-def create_app() -> FastAPI:
-    app = FastAPI()
-    
-    @app.get("/")
-    def hello():
-        return {
-            "message": "Hello World!"
-        }
+@app.get("/posts")
+def getPosts():
+    posts = db.get_posts()
+    if not posts:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No posts found")
+    return {
+        "data": posts
+    }
 
-    @app.post("/posts", status_code=status.HTTP_201_CREATED)
-    def createPost(post: Post):
-        post_dict = post.model_dump()
-        post_dict['id'] = randrange(1,10000)
-        posts.append(post_dict)
-        return {"data": post_dict }
+@app.get("/posts/{post_id}")
+def getPost(post_id: int):
+    post = db.get_post(post_id)
+    if not post:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"post with id: {post_id} doesn't exist")
+    return {
+        "data": post
+    }
 
-    @app.get("/posts")
-    def getPosts():
-        return {
-            "data": posts
-        }
+@app.delete("/posts/{post_id}", status_code=status.HTTP_204_NO_CONTENT)
+def deletePost(post_id: int):        
+    if not db.delete_post(post_id):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"post with id: {post_id} doesn't exist")
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
-    @app.get("/posts/{post_id}")
-    def getPost(post_id: int):
-        post = findPost(post_id)
-        if not post:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"post with id: {post_id} doesn't exist")
-        return {
-            "data": post
-        }
-
-    @app.delete("/posts/{post_id}", status_code=status.HTTP_204_NO_CONTENT)
-    def deletePost(post_id: int):
-        post = findPost(post_id)
-        if not post:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"post with id: {post_id} doesn't exist")
-        posts.remove(post)
-        return Response(status_code=status.HTTP_204_NO_CONTENT)
-
-    @app.put("/posts/{post_id}")
-    def updatePost(post_id: int, post: Post):
-        try:
-            new_post = post.dict()
-            new_post['id'] = post_id
-            old_post = findPost(post_id)
-            posts[posts.index(old_post)] = new_post
-        except Exception as exc:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"post with id: {post_id} doesn't exist") from exc
-        return {
-            "data": post
-        }
-
-    return app
-
-app = create_app()
+@app.put("/posts/{post_id}")
+def updatePost(post_id: int, post_updated: Post):
+    post= db.update_post(post_id, post_updated.model_dump())
+    if not post:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"post with id: {post_id} doesn't exist")
+    return {
+        "data": post
+    }
