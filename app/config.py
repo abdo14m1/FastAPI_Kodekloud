@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     DB_NAME: str
     DB_USER: str
     DB_PASSWORD: str
-    
+
     @property
     def db_connection_string(self) -> str:
         return f"postgresql://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
@@ -28,6 +28,7 @@ class Settings(BaseSettings):
 
     class Config:
         env_file = ".env"
+
 
 @lru_cache()
 def get_settings() -> Settings:
