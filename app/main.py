@@ -1,30 +1,35 @@
-from fastapi import FastAPI, Response, status, HTTPException
-from .database import Database
-from .models import Post
+from fastapi import FastAPI, Response, status, HTTPException, Depends
+from .models import PostCreate
+from .tables import PostDB, Base
 from .config import get_settings
+from .database import engine, Session, get_db
+
 
 settings = get_settings()
 app = FastAPI(
     title=settings.APP_NAME, version=settings.APP_VERSION, debug=settings.DEBUG
 )
 
-db = Database()
-cur = db.get_cursor()
+Base.metadata.create_all(bind=engine)
 
 
 @app.get("/")
 def hello():
-    return {"message": "Hello World!"}
+    return {"message": "Hello World"}
 
 
 @app.post("/posts", status_code=status.HTTP_201_CREATED)
-def createPost(post: Post):
-    return {"data": db.create_post(post.model_dump())}
+def createPost(post: PostCreate, db: Session = Depends(get_db)):
+    new_post = PostDB(**post.model_dump())
+    db.add(new_post)
+    db.commit()
+    db.refresh(new_post)
+    return {"data": new_post}
 
 
 @app.get("/posts")
-def getPosts():
-    posts = db.get_posts()
+def getPosts(db: Session = Depends(get_db)):
+    posts = db.query(PostDB).all()
     if not posts:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="No posts found"
@@ -33,8 +38,8 @@ def getPosts():
 
 
 @app.get("/posts/{post_id}")
-def getPost(post_id: int):
-    post = db.get_post(post_id)
+def getPost(post_id: int, db: Session = Depends(get_db)):
+    post = db.query(PostDB).filter(PostDB.id == post_id).first()
     if not post:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -44,21 +49,28 @@ def getPost(post_id: int):
 
 
 @app.delete("/posts/{post_id}", status_code=status.HTTP_204_NO_CONTENT)
-def deletePost(post_id: int):
-    if not db.delete_post(post_id):
+def deletePost(post_id: int, db: Session = Depends(get_db)):
+    query = db.query(PostDB).filter(PostDB.id == post_id)
+    if query.first() == None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"post with id: {post_id} doesn't exist",
         )
+    query.delete(synchronize_session=False)
+    db.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @app.put("/posts/{post_id}")
-def updatePost(post_id: int, post_updated: Post):
-    post = db.update_post(post_id, post_updated.model_dump())
+def updatePost(post_id: int, post_updated: PostCreate, db: Session = Depends(get_db)):
+    post_query = db.query(PostDB).filter(PostDB.id == post_id)
+    post = post_query.first()
     if not post:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"post with id: {post_id} doesn't exist",
         )
+    post_query.update(post_updated.model_dump(), synchronize_session=False)
+    db.commit()
+    db.refresh(post)
     return {"data": post}
