@@ -6,7 +6,7 @@ from .database import engine, get_db, PostDB, Base
 from sqlalchemy.orm import Session
 
 settings = get_settings()
-app = FastAPI(
+social_app = FastAPI(
     title=settings.APP_NAME, version=settings.APP_VERSION, debug=settings.DEBUG
 )
 
