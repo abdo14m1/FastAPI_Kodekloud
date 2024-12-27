@@ -1,9 +1,10 @@
 from sqlalchemy import create_engine, Column, Integer, String, Boolean, TIMESTAMP, text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-from .config import Settings
+from .config import get_settings
 
-CONNECTION_STRING = Settings().db_connection_string
+settings = get_settings()
+CONNECTION_STRING = settings.db_connection_string
 engine = create_engine(CONNECTION_STRING)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
