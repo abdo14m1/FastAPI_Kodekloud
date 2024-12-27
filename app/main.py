@@ -1,6 +1,4 @@
-from fastapi import FastAPI, Response, status, HTTPException, Depends
-from sqlalchemy.orm import Session
-from .models import PostCreate, PostResponse, UserCreate, UserResponse
+from fastapi import FastAPI
 from .config import get_settings
 from .database import engine, Base
 from .routers import posts, users
