@@ -24,7 +24,7 @@ def createPost(post: PostCreate, db: Session = Depends(get_db)):
     db.add(new_post)
     db.commit()
     db.refresh(new_post)
-    return {"data": new_post}
+    return {new_post}
 
 
 @app.get("/posts")
@@ -34,7 +34,7 @@ def getPosts(db: Session = Depends(get_db)):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="No posts found"
         )
-    return {"data": posts}
+    return {posts}
 
 
 @app.get("/posts/{post_id}")
@@ -45,7 +45,7 @@ def getPost(post_id: int, db: Session = Depends(get_db)):
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"post with id: {post_id} doesn't exist",
         )
-    return {"data": post}
+    return {post}
 
 
 @app.delete("/posts/{post_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -73,4 +73,4 @@ def updatePost(post_id: int, post_updated: PostCreate, db: Session = Depends(get
     post_query.update(post_updated.model_dump(), synchronize_session=False)
     db.commit()
     db.refresh(post)
-    return {"data": post}
+    return {post}
