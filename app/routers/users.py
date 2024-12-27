@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from app import models, database, utils
 
 
-router = APIRouter(prefix="/users")
+router = APIRouter(prefix="/users", tags=["users"])
 
 
 @router.post(
