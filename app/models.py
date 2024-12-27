@@ -22,3 +22,12 @@ class PostResponse(PostBase):
 class UserCreate(BaseModel):
     email: EmailStr
     password: str
+
+
+class UserResponse(BaseModel):
+    uid: int
+    email: EmailStr
+    created_at: datetime
+
+    class Config:
+        from_attributes = True

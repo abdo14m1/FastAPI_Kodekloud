@@ -1,7 +1,7 @@
 from typing import List
 from fastapi import FastAPI, Response, status, HTTPException, Depends
 from sqlalchemy.orm import Session
-from .models import PostCreate, PostResponse, UserCreate
+from .models import PostCreate, PostResponse, UserCreate, UserResponse
 from .config import get_settings
 from .database import engine, Base, get_db, PostDB, UserDB
 
@@ -31,7 +31,7 @@ def create_post(post: PostCreate, db: Session = Depends(get_db)):
 
 
 @social_app.get("/posts", response_model=List[PostResponse])
-def getPosts(db: Session = Depends(get_db)):
+def get_posts(db: Session = Depends(get_db)):
     posts = db.query(PostDB).all()
     if not posts:
         raise HTTPException(
@@ -41,7 +41,7 @@ def getPosts(db: Session = Depends(get_db)):
 
 
 @social_app.get("/posts/{post_id}", response_model=PostResponse)
-def getPost(post_id: int, db: Session = Depends(get_db)):
+def get_post(post_id: int, db: Session = Depends(get_db)):
     post = db.query(PostDB).filter(PostDB.id == post_id).first()
     if not post:
         raise HTTPException(
@@ -52,9 +52,9 @@ def getPost(post_id: int, db: Session = Depends(get_db)):
 
 
 @social_app.delete("/posts/{post_id}", status_code=status.HTTP_204_NO_CONTENT)
-def deletePost(post_id: int, db: Session = Depends(get_db)):
+def delete_post(post_id: int, db: Session = Depends(get_db)):
     query = db.query(PostDB).filter(PostDB.id == post_id)
-    if query.first() == None:
+    if query.first() is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"post with id: {post_id} doesn't exist",
@@ -65,7 +65,7 @@ def deletePost(post_id: int, db: Session = Depends(get_db)):
 
 
 @social_app.put("/posts/{post_id}")
-def updatePost(
+def update_post(
     post_id: int,
     post_updated: PostCreate,
     db: Session = Depends(get_db),
@@ -84,9 +84,16 @@ def updatePost(
     return post
 
 
-@social_app.post("/users", status_code=status.HTTP_201_CREATED)
+@social_app.post(
+    "/users", status_code=status.HTTP_201_CREATED, response_model=UserResponse
+)
 def create_user(user: UserCreate, db: Session = Depends(get_db)):
     new_user = UserDB(**user.model_dump())
+    if db.query(UserDB).filter(UserDB.email == new_user.email).first():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Email {new_user.email} already registered",
+        )
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
