@@ -1,9 +1,9 @@
 from typing import List
 from fastapi import FastAPI, Response, status, HTTPException, Depends
 from sqlalchemy.orm import Session
-from .models import PostCreate, PostResponse
+from .models import PostCreate, PostResponse, UserCreate
 from .config import get_settings
-from .database import engine, get_db, PostDB, Base
+from .database import engine, Base, get_db, PostDB, UserDB
 
 
 settings = get_settings()
@@ -82,3 +82,12 @@ def updatePost(
     db.commit()
     db.refresh(post)
     return post
+
+
+@social_app.post("/users", status_code=status.HTTP_201_CREATED)
+def create_user(user: UserCreate, db: Session = Depends(get_db)):
+    new_user = UserDB(**user.model_dump())
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    return new_user

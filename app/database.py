@@ -31,7 +31,7 @@ class PostDB(Base):
     )
 
 
-class User(Base):
+class UserDB(Base):
     __tablename__ = "users"
     uid = Column(Integer, primary_key=True, index=True, nullable=False)
     email = Column(String, nullable=False, unique=True)
