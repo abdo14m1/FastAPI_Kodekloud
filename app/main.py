@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Response, status, HTTPException, Depends
-from .models import PostCreate
+from .models import PostCreate, PostResponse
 from .tables import PostDB, Base
 from .config import get_settings
 from .database import engine, Session, get_db
@@ -18,7 +18,7 @@ def hello():
     return {"message": "Hello World"}
 
 
-@app.post("/posts", status_code=status.HTTP_201_CREATED)
+@app.post("/posts", status_code=status.HTTP_201_CREATED, response_model=PostResponse)
 def createPost(post: PostCreate, db: Session = Depends(get_db)):
     new_post = PostDB(**post.model_dump())
     db.add(new_post)
@@ -27,7 +27,7 @@ def createPost(post: PostCreate, db: Session = Depends(get_db)):
     return new_post
 
 
-@app.get("/posts")
+@app.get("/posts", response_model=PostResponse)
 def getPosts(db: Session = Depends(get_db)):
     posts = db.query(PostDB).all()
     if not posts:
@@ -37,7 +37,7 @@ def getPosts(db: Session = Depends(get_db)):
     return posts
 
 
-@app.get("/posts/{post_id}")
+@app.get("/posts/{post_id}", response_model=PostResponse)
 def getPost(post_id: int, db: Session = Depends(get_db)):
     post = db.query(PostDB).filter(PostDB.id == post_id).first()
     if not post:
@@ -62,7 +62,12 @@ def deletePost(post_id: int, db: Session = Depends(get_db)):
 
 
 @app.put("/posts/{post_id}")
-def updatePost(post_id: int, post_updated: PostCreate, db: Session = Depends(get_db)):
+def updatePost(
+    post_id: int,
+    post_updated: PostCreate,
+    db: Session = Depends(get_db),
+    response_model=PostResponse,
+):
     post_query = db.query(PostDB).filter(PostDB.id == post_id)
     post = post_query.first()
     if not post:
