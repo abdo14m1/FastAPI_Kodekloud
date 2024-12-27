@@ -1,9 +1,10 @@
 from typing import List
 from fastapi import FastAPI, Response, status, HTTPException, Depends
+from sqlalchemy.orm import Session
 from .models import PostCreate, PostResponse
 from .config import get_settings
 from .database import engine, get_db, PostDB, Base
-from sqlalchemy.orm import Session
+
 
 settings = get_settings()
 social_app = FastAPI(
@@ -13,13 +14,15 @@ social_app = FastAPI(
 Base.metadata.create_all(bind=engine)
 
 
-@app.get("/")
+@social_app.get("/")
 def hello():
     return {"message": "Hello World"}
 
 
-@app.post("/posts", status_code=status.HTTP_201_CREATED, response_model=PostResponse)
-def createPost(post: PostCreate, db: Session = Depends(get_db)):
+@social_app.post(
+    "/posts", status_code=status.HTTP_201_CREATED, response_model=PostResponse
+)
+def create_post(post: PostCreate, db: Session = Depends(get_db)):
     new_post = PostDB(**post.model_dump())
     db.add(new_post)
     db.commit()
@@ -27,7 +30,7 @@ def createPost(post: PostCreate, db: Session = Depends(get_db)):
     return new_post
 
 
-@app.get("/posts", response_model=List[PostResponse])
+@social_app.get("/posts", response_model=List[PostResponse])
 def getPosts(db: Session = Depends(get_db)):
     posts = db.query(PostDB).all()
     if not posts:
@@ -37,7 +40,7 @@ def getPosts(db: Session = Depends(get_db)):
     return posts
 
 
-@app.get("/posts/{post_id}", response_model=PostResponse)
+@social_app.get("/posts/{post_id}", response_model=PostResponse)
 def getPost(post_id: int, db: Session = Depends(get_db)):
     post = db.query(PostDB).filter(PostDB.id == post_id).first()
     if not post:
@@ -48,7 +51,7 @@ def getPost(post_id: int, db: Session = Depends(get_db)):
     return post
 
 
-@app.delete("/posts/{post_id}", status_code=status.HTTP_204_NO_CONTENT)
+@social_app.delete("/posts/{post_id}", status_code=status.HTTP_204_NO_CONTENT)
 def deletePost(post_id: int, db: Session = Depends(get_db)):
     query = db.query(PostDB).filter(PostDB.id == post_id)
     if query.first() == None:
@@ -61,7 +64,7 @@ def deletePost(post_id: int, db: Session = Depends(get_db)):
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-@app.put("/posts/{post_id}")
+@social_app.put("/posts/{post_id}")
 def updatePost(
     post_id: int,
     post_updated: PostCreate,
