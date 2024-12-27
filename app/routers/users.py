@@ -26,7 +26,7 @@ def create_user(user: models.UserCreate, db: Session = Depends(database.get_db))
     return new_user
 
 
-@router.get("/users/{id}", response_model=models.UserResponse)
+@router.get("/users/{uid}", response_model=models.UserResponse)
 def get_user(uid: int, db: Session = Depends(database.get_db)):
     user = db.query(database.UserDB).filter(database.UserDB.uid == uid).first()
     if not user:
