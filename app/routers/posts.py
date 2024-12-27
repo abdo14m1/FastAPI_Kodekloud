@@ -3,11 +3,11 @@ from fastapi import status, HTTPException, Depends, APIRouter, Response
 from sqlalchemy.orm import Session
 from app import models, database
 
-router = APIRouter()
+router = APIRouter(prefix="/posts")
 
 
 @router.post(
-    "/posts", status_code=status.HTTP_201_CREATED, response_model=models.PostResponse
+    "/", status_code=status.HTTP_201_CREATED, response_model=models.PostResponse
 )
 def create_post(post: models.PostCreate, db: Session = Depends(database.get_db)):
     new_post = database.PostDB(**post.model_dump())
@@ -17,7 +17,7 @@ def create_post(post: models.PostCreate, db: Session = Depends(database.get_db))
     return new_post
 
 
-@router.get("/posts", response_model=List[models.PostResponse])
+@router.get("/", response_model=List[models.PostResponse])
 def get_posts(db: Session = Depends(database.get_db)):
     posts = db.query(database.PostDB).all()
     if not posts:
@@ -27,7 +27,7 @@ def get_posts(db: Session = Depends(database.get_db)):
     return posts
 
 
-@router.get("/posts/{post_id}", response_model=models.PostResponse)
+@router.get("/{post_id}", response_model=models.PostResponse)
 def get_post(post_id: int, db: Session = Depends(database.get_db)):
     post = db.query(database.PostDB).filter(database.PostDB.id == post_id).first()
     if not post:
@@ -38,7 +38,7 @@ def get_post(post_id: int, db: Session = Depends(database.get_db)):
     return post
 
 
-@router.delete("/posts/{post_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{post_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_post(post_id: int, db: Session = Depends(database.get_db)):
     query = db.query(database.PostDB).filter(database.PostDB.id == post_id)
     if query.first() is None:
@@ -51,7 +51,7 @@ def delete_post(post_id: int, db: Session = Depends(database.get_db)):
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-@router.put("/posts/{post_id}", response_model=models.PostResponse)
+@router.put("/{post_id}", response_model=models.PostResponse)
 def update_post(
     post_id: int,
     post_updated: models.PostCreate,
