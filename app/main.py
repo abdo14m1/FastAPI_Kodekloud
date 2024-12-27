@@ -1,9 +1,9 @@
+from typing import List
 from fastapi import FastAPI, Response, status, HTTPException, Depends
 from .models import PostCreate, PostResponse
-from .tables import PostDB, Base
 from .config import get_settings
-from .database import engine, Session, get_db
-
+from .database import engine, get_db, PostDB, Base
+from sqlalchemy.orm import Session
 
 settings = get_settings()
 app = FastAPI(
@@ -27,7 +27,7 @@ def createPost(post: PostCreate, db: Session = Depends(get_db)):
     return new_post
 
 
-@app.get("/posts", response_model=PostResponse)
+@app.get("/posts", response_model=List[PostResponse])
 def getPosts(db: Session = Depends(get_db)):
     posts = db.query(PostDB).all()
     if not posts:
