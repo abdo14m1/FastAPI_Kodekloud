@@ -4,9 +4,10 @@ from sqlalchemy.orm import Session
 from .models import PostCreate, PostResponse, UserCreate, UserResponse
 from .config import get_settings
 from .database import engine, Base, get_db, PostDB, UserDB
-
+from .utils import hash
 
 settings = get_settings()
+
 social_app = FastAPI(
     title=settings.APP_NAME, version=settings.APP_VERSION, debug=settings.DEBUG
 )
@@ -64,13 +65,8 @@ def delete_post(post_id: int, db: Session = Depends(get_db)):
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-@social_app.put("/posts/{post_id}")
-def update_post(
-    post_id: int,
-    post_updated: PostCreate,
-    db: Session = Depends(get_db),
-    response_model=PostResponse,
-):
+@social_app.put("/posts/{post_id}", response_model=PostResponse)
+def update_post(post_id: int, post_updated: PostCreate, db: Session = Depends(get_db)):
     post_query = db.query(PostDB).filter(PostDB.id == post_id)
     post = post_query.first()
     if not post:
@@ -91,10 +87,11 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
     new_user = UserDB(**user.model_dump())
     if db.query(UserDB).filter(UserDB.email == new_user.email).first():
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Email {new_user.email} already registered",
+            status_code=status.HTTP_400_BAD_REQUEST, detail="User already exists"
         )
+
+    hashed_password = hash(new_user.password)
+    new_user.password = hashed_password
     db.add(new_user)
     db.commit()
-    db.refresh(new_user)
     return new_user
