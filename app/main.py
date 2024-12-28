@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from .config import get_settings
 from .database import engine, Base
-from .routers import posts, users
+from .routers import posts, users, auth
 
 # Settings
 settings = get_settings()
@@ -12,7 +12,7 @@ social_app = FastAPI(
 )
 social_app.include_router(posts.router)
 social_app.include_router(users.router)
-
+social_app.include_router(auth.router)
 # Database
 Base.metadata.create_all(bind=engine)
 
