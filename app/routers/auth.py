@@ -24,4 +24,4 @@ def login(user_credentials: models.UserLogin, db: Session = Depends(database.get
         )
 
     jwt_token = utils.create_access_token({"user_id": user.uid})
-    return {jwt_token}
+    return {"access_token": jwt_token, "token_type": "bearer"}
